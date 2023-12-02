@@ -1,4 +1,7 @@
+using Fastfood.Models;
 using Fastfood.Repository;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +10,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 options.UseSqlServer(builder.Configuration.GetConnectionString("ApplicationDbContextConnection")));
+
+builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddDefaultTokenProviders()
+    .AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddScoped<IDbInitializer, DbInitializer>();
+builder.Services.AddScoped<IEmailSender, EmailSender>();
+builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
@@ -20,13 +29,23 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
+DataSeeding();
 app.UseRouting();
+app.UseAuthentication();
 
 app.UseAuthorization();
+app.MapRazorPages();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{area=admin}/{controller=category}/{action=Index}/{id?}");
 
 app.Run();
+
+void DataSeeding()
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var DbInitializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
+    }
+}
